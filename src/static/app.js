@@ -177,6 +177,57 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // Function to delete an activity (teacher only)
+  async function deleteActivity(activityName) {
+    const authToken = getAuthToken();
+    if (!authToken) {
+      messageDiv.textContent = "You must be logged in as a teacher to delete activities";
+      messageDiv.className = "error";
+      messageDiv.classList.remove("hidden");
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to delete "${activityName}"?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/activities/${encodeURIComponent(activityName)}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        messageDiv.textContent = result.message || "Activity deleted successfully";
+        messageDiv.className = "success";
+        fetchActivities(); // Refresh the list
+      } else {
+        messageDiv.textContent = result.detail || "Failed to delete activity";
+        messageDiv.className = "error";
+      }
+
+      messageDiv.classList.remove("hidden");
+
+      // Hide message after 5 seconds
+      setTimeout(() => {
+        messageDiv.classList.add("hidden");
+      }, 5000);
+
+    } catch (error) {
+      messageDiv.textContent = "Failed to delete activity. Please try again.";
+      messageDiv.className = "error";
+      messageDiv.classList.remove("hidden");
+      console.error("Error deleting activity:", error);
+    }
+  }
+
+  // Make deleteActivity available globally for onclick handlers
+  window.deleteActivity = deleteActivity;
+
   // Initialize app
   fetchActivities();
 });
