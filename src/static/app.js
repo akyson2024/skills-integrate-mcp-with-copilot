@@ -4,14 +4,31 @@ document.addEventListener("DOMContentLoaded", () => {
   const signupForm = document.getElementById("signup-form");
   const messageDiv = document.getElementById("message");
 
+  // Function to get teacher auth token
+  function getAuthToken() {
+    const teacherData = localStorage.getItem("teacher");
+    if (!teacherData) return null;
+    
+    const teacher = JSON.parse(teacherData);
+    // Note: In a production environment, we would store and use a real auth token
+    return `${teacher.email}:password`;
+  }
+
   // Function to fetch activities from API
   async function fetchActivities() {
     try {
-      const response = await fetch("/activities");
+      const headers = {};
+      const authToken = getAuthToken();
+      if (authToken) {
+        headers.Authorization = `Bearer ${authToken}`;
+      }
+      
+      const response = await fetch("/activities", { headers });
       const activities = await response.json();
 
-      // Clear loading message
+      // Clear loading message and existing options
       activitiesList.innerHTML = "";
+      activitySelect.innerHTML = '<option value="">-- Select an activity --</option>';
 
       // Populate activities list
       Object.entries(activities).forEach(([name, details]) => {
@@ -45,6 +62,11 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="participants-container">
             ${participantsHTML}
           </div>
+          ${getAuthToken() ? `
+            <div class="teacher-actions">
+              <button onclick="deleteActivity('${name}')" class="delete-activity-btn">Delete Activity</button>
+            </div>
+          ` : ''}
         `;
 
         activitiesList.appendChild(activityCard);
